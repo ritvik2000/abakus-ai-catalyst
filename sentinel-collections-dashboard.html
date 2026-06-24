@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentinel — AI Collections Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1220;
+    --ink-soft:#141E30;
+    --paper:#F7F5F0;
+    --paper-dim:#EAE7DD;
+    --line:rgba(247,245,240,0.12);
+    --line-soft:rgba(11,18,32,0.10);
+    --wire:#3D6E8C;
+    --wire-bright:#5B93B5;
+    --sage:#5C7A5C;
+    --sage-bg:rgba(92,122,92,0.13);
+    --amber:#C8902D;
+    --amber-bg:rgba(200,144,45,0.14);
+    --terracotta:#A8432F;
+    --terracotta-bg:rgba(168,67,47,0.14);
+    --text-dim:rgba(247,245,240,0.55);
+    --text-dimmer:rgba(247,245,240,0.38);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .serif{font-family:'Source Serif 4',serif;}
+
+  /* ===== Top bar ===== */
+  .topbar{
+    border-bottom:1px solid var(--line);
+    padding:22px 36px 18px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .brand{display:flex;align-items:baseline;gap:12px;}
+  .brand-mark{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--sage);
+    display:inline-block;
+    box-shadow:0 0 0 3px var(--sage-bg);
+    transform:translateY(-2px);
+  }
+  .brand h1{
+    font-family:'Source Serif 4',serif;
+    font-weight:700;
+    font-size:22px;
+    margin:0;
+    letter-spacing:0.01em;
+  }
+  .brand .sub{
+    color:var(--text-dim);
+    font-size:12.5px;
+    margin-left:4px;
+  }
+  .topbar-right{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--text-dim);
+    text-align:right;
+  }
+  .topbar-right .date{color:var(--paper);}
+
+  /* ===== Portfolio health strip ===== */
+  .health-strip{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    border-bottom:1px solid var(--line);
+  }
+  .health-cell{
+    padding:20px 28px;
+    border-right:1px solid var(--line);
+  }
+  .health-cell:last-child{border-right:none;}
+  .health-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--text-dim);
+    margin-bottom:8px;
+  }
+  .health-value{
+    font-family:'JetBrains Mono',monospace;
+    font-size:25px;
+    font-weight:600;
+    line-height:1;
+  }
+  .health-value .unit{font-size:14px;color:var(--text-dim);font-weight:400;margin-left:4px;}
+  .health-delta{font-size:11.5px;margin-top:7px;font-family:'JetBrains Mono',monospace;}
+  .delta-up{color:var(--sage);}
+  .delta-down{color:var(--terracotta);}
+
+  /* ===== Main layout ===== */
+  .main{
+    padding:30px 36px 60px;
+    max-width:1400px;
+    margin:0 auto;
+  }
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .section-head h2{
+    font-family:'Source Serif 4',serif;
+    font-size:19px;
+    font-weight:600;
+    margin:0;
+  }
+  .section-head .desc{
+    font-size:12.5px;
+    color:var(--text-dim);
+    margin-top:4px;
+  }
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .seg-btn{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    padding:7px 13px;
+    border-radius:5px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--text-dim);
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .seg-btn:hover{border-color:var(--wire-bright);color:var(--paper);}
+  .seg-btn.active{
+    background:var(--paper);
+    color:var(--ink);
+    border-color:var(--paper);
+  }
+  .search-box{
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    padding:7px 12px;
+    border-radius:5px;
+    border:1px solid var(--line);
+    background:rgba(247,245,240,0.04);
+    color:var(--paper);
+    width:190px;
+  }
+  .search-box::placeholder{color:var(--text-dimmer);}
+  .search-box:focus{outline:none;border-color:var(--wire-bright);}
+
+  /* ===== Table ===== */
+  .table-wrap{
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  table{width:100%;border-collapse:collapse;}
+  thead th{
+    text-align:left;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.07em;
+    color:var(--text-dim);
+    font-weight:600;
+    padding:13px 16px;
+    background:rgba(247,245,240,0.03);
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  tbody tr{
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+    transition:background .12s ease;
+  }
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:rgba(247,245,240,0.035);}
+  tbody tr.selected{background:rgba(91,147,181,0.10);}
+  td{padding:13px 16px;font-size:13px;vertical-align:middle;}
+  .b-name{font-weight:600;font-size:13.5px;}
+  .b-sub{font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .num{font-family:'JetBrains Mono',monospace;}
+
+  .risk-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:4px 9px;
+    border-radius:20px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    font-weight:600;
+  }
+  .risk-pill .dot{width:6px;height:6px;border-radius:50%;}
+  .risk-low{background:var(--sage-bg);color:var(--sage);}
+  .risk-low .dot{background:var(--sage);}
+  .risk-med{background:var(--amber-bg);color:var(--amber);}
+  .risk-med .dot{background:var(--amber);}
+  .risk-high{background:var(--terracotta-bg);color:var(--terracotta);}
+  .risk-high .dot{background:var(--terracotta);}
+
+  .nach-tag{
+    font-size:10.5px;
+    font-family:'JetBrains Mono',monospace;
+    padding:2px 7px;
+    border-radius:3px;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+  }
+  .nach-tag.active{color:var(--wire-bright);border-color:var(--wire-bright);}
+
+  /* ===== DPD Timeline sparkline (signature element) ===== */
+  .dpd-timeline{
+    position:relative;
+    width:170px;
+    height:30px;
+  }
+  .dpd-track{
+    position:absolute;
+    top:14px;left:0;right:0;
+    height:2px;
+    background:var(--line);
+  }
+  .dpd-due-marker{
+    position:absolute;
+    top:6px;
+    width:1px;
+    height:18px;
+    background:var(--text-dimmer);
+  }
+  .dpd-due-marker::after{
+    content:'DUE';
+    position:absolute;
+    top:-13px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:8px;
+    font-family:'JetBrains Mono',monospace;
+    color:var(--text-dimmer);
+    letter-spacing:0.04em;
+  }
+  .dpd-tick{
+    position:absolute;
+    top:10px;
+    width:8px;height:8px;
+    border-radius:50%;
+    border:2px solid var(--ink);
+    transform:translateX(-50%);
+  }
+  .dpd-tick.sent{background:var(--wire);}
+  .dpd-tick.pending{background:transparent;border:2px solid var(--text-dimmer);}
+  .dpd-tick.today{background:var(--paper);box-shadow:0 0 0 3px rgba(247,245,240,0.18);}
+  .dpd-now-label{
+    position:absolute;
+    top:18px;
+    transform:translateX(-50%);
+    font-size:8px;
+    font-family:'JetBrains Mono',monospace;
+    color:var(--paper);
+    white-space:nowrap;
+  }
+
+  /* ===== Detail panel (slide-over) ===== */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(11,18,32,0.6);
+    backdrop-filter:blur(2px);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease;
+    z-index:40;
+  }
+  .overlay.open{opacity:1;pointer-events:auto;}
+  .detail-panel{
+    position:fixed;
+    top:0;right:0;
+    width:440px;
+    max-width:92vw;
+    height:100vh;
+    background:var(--ink-soft);
+    border-left:1px solid var(--line);
+    transform:translateX(100%);
+    transition:transform .25s cubic-bezier(.4,0,.2,1);
+    z-index:41;
+    overflow-y:auto;
+  }
+  .detail-panel.open{transform:translateX(0);}
+  .detail-head{
+    padding:26px 28px 20px;
+    border-bottom:1px solid var(--line);
+    position:relative;
+  }
+  .close-btn{
+    position:absolute;top:22px;right:22px;
+    width:28px;height:28px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--text-dim);
+    cursor:pointer;
+    font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .close-btn:hover{color:var(--paper);border-color:var(--paper);}
+  .detail-name{font-family:'Source Serif 4',serif;font-size:21px;font-weight:700;margin:0 0 5px;}
+  .detail-meta{font-size:12px;color:var(--text-dim);}
+  .detail-body{padding:22px 28px 40px;}
+  .detail-block{margin-bottom:26px;}
+  .detail-block h3{
+    font-size:11px;text-transform:uppercase;letter-spacing:0.07em;
+    color:var(--text-dim);margin:0 0 12px;font-weight:600;
+  }
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .stat-box{
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:12px 14px;
+  }
+  .stat-box .l{font-size:10.5px;color:var(--text-dim);margin-bottom:5px;}
+  .stat-box .v{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;}
+
+  .hist-row{display:flex;gap:5px;margin-top:8px;}
+  .hist-chip{
+    width:30px;height:24px;
+    border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;font-weight:700;
+  }
+  .hist-chip.P{background:var(--sage-bg);color:var(--sage);}
+  .hist-chip.L{background:var(--amber-bg);color:var(--amber);}
+  .hist-chip.D{background:var(--terracotta-bg);color:var(--terracotta);}
+  .hist-caption{font-size:10px;color:var(--text-dimmer);margin-top:6px;}
+
+  .schedule-item{
+    display:flex;
+    gap:14px;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .schedule-item:last-child{border-bottom:none;}
+  .sched-marker{
+    width:30px;flex-shrink:0;
+    text-align:center;
+  }
+  .sched-day{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);}
+  .sched-content{flex:1;}
+  .sched-title{font-size:13px;font-weight:600;margin-bottom:3px;}
+  .sched-detail{font-size:11.5px;color:var(--text-dim);line-height:1.5;}
+  .sched-status{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9.5px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    padding:2px 7px;
+    border-radius:3px;
+    flex-shrink:0;
+    height:fit-content;
+  }
+  .sched-status.done{background:var(--sage-bg);color:var(--sage);}
+  .sched-status.scheduled{background:rgba(247,245,240,0.06);color:var(--text-dim);border:1px solid var(--line);}
+  .sched-status.escalated{background:var(--terracotta-bg);color:var(--terracotta);}
+
+  .strategy-banner{
+    background:rgba(91,147,181,0.08);
+    border:1px solid rgba(91,147,181,0.3);
+    border-radius:7px;
+    padding:14px 16px;
+    font-size:12.5px;
+    line-height:1.55;
+    color:var(--paper);
+  }
+  .strategy-banner b{color:var(--wire-bright);}
+
+  /* ===== Footer note ===== */
+  .footnote{
+    margin-top:28px;
+    font-size:11.5px;
+    color:var(--text-dimmer);
+    line-height:1.6;
+    border-top:1px solid var(--line);
+    padding-top:18px;
+  }
+  .footnote b{color:var(--text-dim);}
+
+  @media (max-width:900px){
+    .health-strip{grid-template-columns:repeat(2,1fr);}
+    .health-cell:nth-child(2n){border-right:none;}
+    .dpd-timeline{display:none;}
+    .main{padding:24px 16px 50px;}
+    .topbar{padding:18px 16px 16px;}
+    table{font-size:12px;}
+    td,th{padding:10px 8px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="brand-mark"></span>
+    <h1>Sentinel</h1>
+    <span class="sub">AI Collections &amp; Repayment Intelligence — Apex Finance NBFC</span>
+  </div>
+  <div class="topbar-right">
+    <div class="date" id="todayLabel">—</div>
+    <div>Portfolio refresh: live</div>
+  </div>
+</div>
+
+<div class="health-strip" id="healthStrip"></div>
+
+<div class="main">
+
+  <div class="section-head">
+    <div>
+      <h2>Borrower Risk Desk</h2>
+      <div class="desc">Each row is scored from repayment history, current DPD, and NACH bounce pattern — the engine derives a reminder cadence and channel automatically.</div>
+    </div>
+    <div class="controls">
+      <input class="search-box" id="searchBox" placeholder="Search name or ID…">
+      <button class="seg-btn active" data-filter="all">All (42)</button>
+      <button class="seg-btn" data-filter="high">High risk</button>
+      <button class="seg-btn" data-filter="med">Watch</button>
+      <button class="seg-btn" data-filter="low">Healthy</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Borrower</th>
+          <th>Risk score</th>
+          <th>DPD</th>
+          <th>EMI due</th>
+          <th>NACH</th>
+          <th>Repayment timeline</th>
+          <th>Next action</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="footnote">
+    <b>How scoring works:</b> Risk score = weighted blend of on-time-payment ratio (last 6 EMIs, 40%), current days-past-due (30%), NACH/eNACH bounce history (20%), and loan-to-tenure stage (10%). Reminder cadence and channel are then selected per risk band — see borrower detail for the full rationale and schedule. This is a synthetic demo dataset built to illustrate the model's behaviour, not real customer data.
+  </div>
+
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="detail-panel" id="detailPanel"></div>
+
+<script>
+const BORROWERS = [{"id": "NBFC1000", "name": "Pranav Sharma", "city": "Chennai", "loan_type": "Microfinance Loan", "principal": 120000, "emi_amount": 7093, "tenure_done": 5, "tenure_total": 28, "history": ["L", "L", "P", "P", "P", "L"], "on_time_pct": 50, "late_count": 3, "default_count": 0, "dpd": 14, "has_nach": true, "nach_bounce_history": 4, "avg_balance_proxy": "Low", "income_band": "\u20b960k+/mo", "archetype": "risky", "preferred_channel": "Email"}, {"id": "NBFC1001", "name": "Divya Sharma", "city": "Hyderabad", "loan_type": "Personal Loan", "principal": 200000, "emi_amount": 8880, "tenure_done": 26, "tenure_total": 38, "history": ["P", "P", "P", "P", "P", "P"], "on_time_pct": 100, "late_count": 0, "default_count": 0, "dpd": -5, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b915-25k/mo", "archetype": "healthy", "preferred_channel": "Email"}, {"id": "NBFC1002", "name": "Meera Pandey", "city": "Indore", "loan_type": "Gold Loan", "principal": 120000, "emi_amount": 10546, "tenure_done": 9, "tenure_total": 20, "history": ["D", "D", "L", "L", "D", "P"], "on_time_pct": 17, "late_count": 2, "default_count": 3, "dpd": 20, "has_nach": true, "nach_bounce_history": 3, "avg_balance_proxy": "Healthy", "income_band": "\u20b915-25k/mo", "archetype": "chronic", "preferred_channel": "Email"}, {"id": "NBFC1003", "name": "Priya Das", "city": "Bengaluru", "loan_type": "Microfinance Loan", "principal": 80000, "emi_amount": 2418, "tenure_done": 22, "tenure_total": 46, "history": ["L", "L", "L", "P", "P", "P"], "on_time_pct": 50, "late_count": 3, "default_count": 0, "dpd": 2, "has_nach": true, "nach_bounce_history": 2, "avg_balance_proxy": "Healthy", "income_band": "\u20b940-60k/mo", "archetype": "watch", "preferred_channel": "WhatsApp"}, {"id": "NBFC1004", "name": "Sunita Joshi", "city": "Mumbai", "loan_type": "Microfinance Loan", "principal": 80000, "emi_amount": 3547, "tenure_done": 25, "tenure_total": 44, "history": ["L", "P", "P", "P", "D", "P"], "on_time_pct": 67, "late_count": 1, "default_count": 1, "dpd": 9, "has_nach": true, "nach_bounce_history": 0, "avg_balance_proxy": "Moderate", "income_band": "\u20b925-40k/mo", "archetype": "watch", "preferred_channel": "WhatsApp"}, {"id": "NBFC1005", "name": "Sanjay Pandey", "city": "Hyderabad", "loan_type": "Two-Wheeler Loan", "principal": 250000, "emi_amount": 7659, "tenure_done": 19, "tenure_total": 21, "history": ["P", "L", "L", "L", "P", "P"], "on_time_pct": 50, "late_count": 3, "default_count": 0, "dpd": 0, "has_nach": true, "nach_bounce_history": 2, "avg_balance_proxy": "Healthy", "income_band": "\u20b940-60k/mo", "archetype": "watch", "preferred_channel": "Email"}, {"id": "NBFC1006", "name": "Ananya Bose", "city": "Chennai", "loan_type": "Two-Wheeler Loan", "principal": 120000, "emi_amount": 7249, "tenure_done": 7, "tenure_total": 26, "history": ["D", "D", "D", "L", "P", "L"], "on_time_pct": 17, "late_count": 2, "default_count": 3, "dpd": 75, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Low", "income_band": "\u20b915-25k/mo", "archetype": "chronic", "preferred_channel": "WhatsApp"}, {"id": "NBFC1007", "name": "Usha Iyer", "city": "Mumbai", "loan_type": "Two-Wheeler Loan", "principal": 60000, "emi_amount": 3543, "tenure_done": 17, "tenure_total": 36, "history": ["P", "P", "L", "L", "P", "P"], "on_time_pct": 67, "late_count": 2, "default_count": 0, "dpd": -1, "has_nach": true, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b960k+/mo", "archetype": "healthy", "preferred_channel": "SMS"}, {"id": "NBFC1008", "name": "Pooja Rao", "city": "Coimbatore", "loan_type": "Two-Wheeler Loan", "principal": 40000, "emi_amount": 2464, "tenure_done": 2, "tenure_total": 6, "history": ["P", "P", "P", "P", "L", "P"], "on_time_pct": 83, "late_count": 1, "default_count": 0, "dpd": 9, "has_nach": true, "nach_bounce_history": 2, "avg_balance_proxy": "Healthy", "income_band": "\u20b960k+/mo", "archetype": "risky", "preferred_channel": "WhatsApp"}, {"id": "NBFC1009", "name": "Lakshmi Desai", "city": "Kochi", "loan_type": "Personal Loan", "principal": 60000, "emi_amount": 1809, "tenure_done": 15, "tenure_total": 31, "history": ["P", "L", "L", "P", "L", "D"], "on_time_pct": 33, "late_count": 3, "default_count": 1, "dpd": 0, "has_nach": true, "nach_bounce_history": 2, "avg_balance_proxy": "Healthy", "income_band": "\u20b960k+/mo", "archetype": "risky", "preferred_channel": "WhatsApp"}, {"id": "NBFC1010", "name": "Sanjay Pillai", "city": "Mumbai", "loan_type": "Gold Loan", "principal": 120000, "emi_amount": 10943, "tenure_done": 29, "tenure_total": 48, "history": ["P", "P", "P", "P", "P", "P"], "on_time_pct": 100, "late_count": 0, "default_count": 0, "dpd": 0, "has_nach": true, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b915-25k/mo", "archetype": "healthy", "preferred_channel": "WhatsApp"}, {"id": "NBFC1011", "name": "Vikas Sharma", "city": "Chennai", "loan_type": "Consumer Durable Loan", "principal": 350000, "emi_amount": 15929, "tenure_done": 25, "tenure_total": 44, "history": ["P", "P", "P", "P", "L", "P"], "on_time_pct": 83, "late_count": 1, "default_count": 0, "dpd": 4, "has_nach": true, "nach_bounce_history": 2, "avg_balance_proxy": "Healthy", "income_band": "\u20b925-40k/mo", "archetype": "watch", "preferred_channel": "SMS"}, {"id": "NBFC1012", "name": "Geeta Iyer", "city": "Kochi", "loan_type": "Personal Loan", "principal": 60000, "emi_amount": 3635, "tenure_done": 30, "tenure_total": 50, "history": ["P", "P", "P", "P", "P", "L"], "on_time_pct": 83, "late_count": 1, "default_count": 0, "dpd": -2, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b925-40k/mo", "archetype": "healthy", "preferred_channel": "IVR Call"}, {"id": "NBFC1013", "name": "Manoj Menon", "city": "Chennai", "loan_type": "Microfinance Loan", "principal": 350000, "emi_amount": 16667, "tenure_done": 4, "tenure_total": 6, "history": ["D", "D", "P", "P", "P", "D"], "on_time_pct": 50, "late_count": 0, "default_count": 3, "dpd": -1, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b940-60k/mo", "archetype": "watch", "preferred_channel": "WhatsApp"}, {"id": "NBFC1014", "name": "Arvind Das", "city": "Chennai", "loan_type": "Microfinance Loan", "principal": 40000, "emi_amount": 1905, "tenure_done": 5, "tenure_total": 11, "history": ["P", "P", "P", "P", "P", "P"], "on_time_pct": 100, "late_count": 0, "default_count": 0, "dpd": -1, "has_nach": true, "nach_bounce_history": 0, "avg_balance_proxy": "Moderate", "income_band": "\u20b915-25k/mo", "archetype": "healthy", "preferred_channel": "Push Notification"}, {"id": "NBFC1015", "name": "Divya Verma", "city": "Coimbatore", "loan_type": "Two-Wheeler Loan", "principal": 80000, "emi_amount": 3554, "tenure_done": 16, "tenure_total": 35, "history": ["L", "P", "D", "L", "P", "P"], "on_time_pct": 50, "late_count": 2, "default_count": 1, "dpd": 5, "has_nach": true, "nach_bounce_history": 2, "avg_balance_proxy": "Moderate", "income_band": "\u20b925-40k/mo", "archetype": "risky", "preferred_channel": "SMS"}, {"id": "NBFC1016", "name": "Shruti Shah", "city": "Coimbatore", "loan_type": "Two-Wheeler Loan", "principal": 120000, "emi_amount": 7445, "tenure_done": 13, "tenure_total": 32, "history": ["L", "L", "P", "D", "D", "D"], "on_time_pct": 17, "late_count": 2, "default_count": 3, "dpd": 25, "has_nach": true, "nach_bounce_history": 4, "avg_balance_proxy": "Low", "income_band": "\u20b925-40k/mo", "archetype": "risky", "preferred_channel": "IVR Call"}, {"id": "NBFC1017", "name": "Deepak Rao", "city": "Thrissur", "loan_type": "Gold Loan", "principal": 60000, "emi_amount": 1895, "tenure_done": 29, "tenure_total": 46, "history": ["P", "P", "P", "P", "P", "P"], "on_time_pct": 100, "late_count": 0, "default_count": 0, "dpd": -2, "has_nach": true, "nach_bounce_history": 0, "avg_balance_proxy": "Moderate", "income_band": "\u20b940-60k/mo", "archetype": "healthy", "preferred_channel": "IVR Call"}, {"id": "NBFC1018", "name": "Geeta Joshi", "city": "Pune", "loan_type": "Microfinance Loan", "principal": 200000, "emi_amount": 17692, "tenure_done": 10, "tenure_total": 17, "history": ["D", "P", "P", "P", "L", "P"], "on_time_pct": 67, "late_count": 1, "default_count": 1, "dpd": -1, "has_nach": true, "nach_bounce_history": 2, "avg_balance_proxy": "Moderate", "income_band": "\u20b940-60k/mo", "archetype": "watch", "preferred_channel": "SMS"}, {"id": "NBFC1019", "name": "Sanjay Sharma", "city": "Pune", "loan_type": "Used Car Loan", "principal": 120000, "emi_amount": 5466, "tenure_done": 23, "tenure_total": 35, "history": ["L", "P", "L", "P", "L", "P"], "on_time_pct": 50, "late_count": 3, "default_count": 0, "dpd": 2, "has_nach": true, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b960k+/mo", "archetype": "watch", "preferred_channel": "WhatsApp"}, {"id": "NBFC1020", "name": "Nisha Chatterjee", "city": "Hyderabad", "loan_type": "Gold Loan", "principal": 40000, "emi_amount": 1798, "tenure_done": 15, "tenure_total": 35, "history": ["P", "P", "L", "P", "L", "D"], "on_time_pct": 50, "late_count": 2, "default_count": 1, "dpd": 0, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b940-60k/mo", "archetype": "watch", "preferred_channel": "SMS"}, {"id": "NBFC1021", "name": "Pooja Kumar", "city": "Bengaluru", "loan_type": "Personal Loan", "principal": 80000, "emi_amount": 7031, "tenure_done": 17, "tenure_total": 38, "history": ["P", "L", "L", "P", "L", "L"], "on_time_pct": 33, "late_count": 4, "default_count": 0, "dpd": 2, "has_nach": true, "nach_bounce_history": 1, "avg_balance_proxy": "Low", "income_band": "\u20b960k+/mo", "archetype": "risky", "preferred_channel": "WhatsApp"}, {"id": "NBFC1022", "name": "Ananya Bose", "city": "Kozhikode", "loan_type": "Consumer Durable Loan", "principal": 120000, "emi_amount": 10956, "tenure_done": 27, "tenure_total": 43, "history": ["D", "P", "D", "L", "P", "L"], "on_time_pct": 33, "late_count": 2, "default_count": 2, "dpd": 6, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b960k+/mo", "archetype": "watch", "preferred_channel": "WhatsApp"}, {"id": "NBFC1023", "name": "Lakshmi Mehta", "city": "Bengaluru", "loan_type": "Gold Loan", "principal": 150000, "emi_amount": 4636, "tenure_done": 10, "tenure_total": 26, "history": ["P", "P", "P", "P", "P", "P"], "on_time_pct": 100, "late_count": 0, "default_count": 0, "dpd": -3, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Moderate", "income_band": "\u20b960k+/mo", "archetype": "healthy", "preferred_channel": "Push Notification"}, {"id": "NBFC1024", "name": "Suresh Das", "city": "Hyderabad", "loan_type": "Consumer Durable Loan", "principal": 40000, "emi_amount": 2518, "tenure_done": 14, "tenure_total": 34, "history": ["P", "D", "D", "L", "D", "L"], "on_time_pct": 17, "late_count": 2, "default_count": 3, "dpd": 35, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Moderate", "income_band": "\u20b925-40k/mo", "archetype": "chronic", "preferred_channel": "Push Notification"}, {"id": "NBFC1025", "name": "Riya Gupta", "city": "Mumbai", "loan_type": "Consumer Durable Loan", "principal": 40000, "emi_amount": 1204, "tenure_done": 23, "tenure_total": 37, "history": ["D", "D", "D", "L", "D", "L"], "on_time_pct": 0, "late_count": 2, "default_count": 4, "dpd": 18, "has_nach": true, "nach_bounce_history": 4, "avg_balance_proxy": "Low", "income_band": "\u20b960k+/mo", "archetype": "risky", "preferred_channel": "WhatsApp"}, {"id": "NBFC1026", "name": "Ishaan Gupta", "city": "Coimbatore", "loan_type": "Consumer Durable Loan", "principal": 120000, "emi_amount": 3609, "tenure_done": 26, "tenure_total": 40, "history": ["L", "P", "P", "P", "P", "P"], "on_time_pct": 83, "late_count": 1, "default_count": 0, "dpd": 0, "has_nach": true, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b915-25k/mo", "archetype": "healthy", "preferred_channel": "SMS"}, {"id": "NBFC1027", "name": "Pooja Reddy", "city": "Indore", "loan_type": "Two-Wheeler Loan", "principal": 80000, "emi_amount": 4723, "tenure_done": 23, "tenure_total": 28, "history": ["P", "L", "L", "P", "P", "L"], "on_time_pct": 50, "late_count": 3, "default_count": 0, "dpd": -1, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Moderate", "income_band": "\u20b940-60k/mo", "archetype": "watch", "preferred_channel": "SMS"}, {"id": "NBFC1028", "name": "Radha Sharma", "city": "Indore", "loan_type": "Gold Loan", "principal": 250000, "emi_amount": 7945, "tenure_done": 8, "tenure_total": 12, "history": ["L", "P", "L", "P", "L", "L"], "on_time_pct": 33, "late_count": 4, "default_count": 0, "dpd": -3, "has_nach": true, "nach_bounce_history": 1, "avg_balance_proxy": "Healthy", "income_band": "\u20b940-60k/mo", "archetype": "watch", "preferred_channel": "SMS"}, {"id": "NBFC1029", "name": "Geeta Patel", "city": "Hyderabad", "loan_type": "Two-Wheeler Loan", "principal": 350000, "emi_amount": 31889, "tenure_done": 13, "tenure_total": 35, "history": ["L", "P", "P", "L", "L", "L"], "on_time_pct": 33, "late_count": 4, "default_count": 0, "dpd": 14, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Moderate", "income_band": "\u20b960k+/mo", "archetype": "risky", "preferred_channel": "Email"}, {"id": "NBFC1030", "name": "Divya Patel", "city": "Kochi", "loan_type": "Personal Loan", "principal": 150000, "emi_amount": 4477, "tenure_done": 16, "tenure_total": 36, "history": ["P", "P", "L", "P", "P", "L"], "on_time_pct": 67, "late_count": 2, "default_count": 0, "dpd": 4, "has_nach": true, "nach_bounce_history": 2, "avg_balance_proxy": "Healthy", "income_band": "\u20b940-60k/mo", "archetype": "watch", "preferred_channel": "Email"}, {"id": "NBFC1031", "name": "Aarav Bose", "city": "Kochi", "loan_type": "Personal Loan", "principal": 120000, "emi_amount": 3663, "tenure_done": 26, "tenure_total": 35, "history": ["P", "P", "L", "P", "P", "L"], "on_time_pct": 67, "late_count": 2, "default_count": 0, "dpd": 2, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b960k+/mo", "archetype": "watch", "preferred_channel": "Email"}, {"id": "NBFC1032", "name": "Rekha Shah", "city": "Pune", "loan_type": "Consumer Durable Loan", "principal": 200000, "emi_amount": 9336, "tenure_done": 10, "tenure_total": 21, "history": ["P", "P", "P", "P", "P", "P"], "on_time_pct": 100, "late_count": 0, "default_count": 0, "dpd": -2, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b940-60k/mo", "archetype": "healthy", "preferred_channel": "SMS"}, {"id": "NBFC1033", "name": "Sneha Kumar", "city": "Coimbatore", "loan_type": "Personal Loan", "principal": 80000, "emi_amount": 3505, "tenure_done": 19, "tenure_total": 25, "history": ["L", "P", "P", "P", "P", "P"], "on_time_pct": 83, "late_count": 1, "default_count": 0, "dpd": -7, "has_nach": true, "nach_bounce_history": 1, "avg_balance_proxy": "Healthy", "income_band": "\u20b960k+/mo", "archetype": "healthy", "preferred_channel": "IVR Call"}, {"id": "NBFC1034", "name": "Ananya Verma", "city": "Mumbai", "loan_type": "Gold Loan", "principal": 60000, "emi_amount": 5450, "tenure_done": 4, "tenure_total": 24, "history": ["P", "P", "P", "P", "D", "P"], "on_time_pct": 83, "late_count": 0, "default_count": 1, "dpd": 6, "has_nach": true, "nach_bounce_history": 2, "avg_balance_proxy": "Moderate", "income_band": "\u20b960k+/mo", "archetype": "watch", "preferred_channel": "Push Notification"}, {"id": "NBFC1035", "name": "Arvind Kumar", "city": "Hyderabad", "loan_type": "Used Car Loan", "principal": 150000, "emi_amount": 13887, "tenure_done": 25, "tenure_total": 30, "history": ["L", "L", "D", "P", "P", "P"], "on_time_pct": 50, "late_count": 2, "default_count": 1, "dpd": 5, "has_nach": true, "nach_bounce_history": 4, "avg_balance_proxy": "Moderate", "income_band": "\u20b915-25k/mo", "archetype": "chronic", "preferred_channel": "WhatsApp"}, {"id": "NBFC1036", "name": "Meera Kumar", "city": "Mumbai", "loan_type": "Microfinance Loan", "principal": 60000, "emi_amount": 3808, "tenure_done": 27, "tenure_total": 49, "history": ["L", "P", "P", "P", "P", "P"], "on_time_pct": 83, "late_count": 1, "default_count": 0, "dpd": 0, "has_nach": true, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b940-60k/mo", "archetype": "watch", "preferred_channel": "Push Notification"}, {"id": "NBFC1037", "name": "Pranav Mehta", "city": "Chennai", "loan_type": "Microfinance Loan", "principal": 250000, "emi_amount": 11459, "tenure_done": 17, "tenure_total": 33, "history": ["P", "P", "P", "P", "P", "L"], "on_time_pct": 83, "late_count": 1, "default_count": 0, "dpd": -7, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b940-60k/mo", "archetype": "healthy", "preferred_channel": "Email"}, {"id": "NBFC1038", "name": "Aditya Pillai", "city": "Pune", "loan_type": "Consumer Durable Loan", "principal": 350000, "emi_amount": 15577, "tenure_done": 20, "tenure_total": 35, "history": ["P", "P", "P", "P", "L", "L"], "on_time_pct": 67, "late_count": 2, "default_count": 0, "dpd": 4, "has_nach": true, "nach_bounce_history": 1, "avg_balance_proxy": "Healthy", "income_band": "\u20b960k+/mo", "archetype": "watch", "preferred_channel": "Email"}, {"id": "NBFC1039", "name": "Aditya Mehta", "city": "Coimbatore", "loan_type": "Two-Wheeler Loan", "principal": 150000, "emi_amount": 6635, "tenure_done": 26, "tenure_total": 40, "history": ["D", "P", "D", "L", "P", "L"], "on_time_pct": 33, "late_count": 2, "default_count": 2, "dpd": 14, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Healthy", "income_band": "\u20b960k+/mo", "archetype": "risky", "preferred_channel": "SMS"}, {"id": "NBFC1040", "name": "Kavya Gupta", "city": "Thrissur", "loan_type": "Used Car Loan", "principal": 150000, "emi_amount": 4742, "tenure_done": 17, "tenure_total": 22, "history": ["P", "P", "P", "P", "P", "P"], "on_time_pct": 100, "late_count": 0, "default_count": 0, "dpd": -2, "has_nach": false, "nach_bounce_history": 0, "avg_balance_proxy": "Moderate", "income_band": "\u20b960k+/mo", "archetype": "healthy", "preferred_channel": "SMS"}, {"id": "NBFC1041", "name": "Varun Agarwal", "city": "Chennai", "loan_type": "Microfinance Loan", "principal": 150000, "emi_amount": 4723, "tenure_done": 17, "tenure_total": 26, "history": ["P", "P", "P", "L", "P", "P"], "on_time_pct": 83, "late_count": 1, "default_count": 0, "dpd": 6, "has_nach": true, "nach_bounce_history": 2, "avg_balance_proxy": "Healthy", "income_band": "\u20b915-25k/mo", "archetype": "watch", "preferred_channel": "IVR Call"}];
+
+// ---------- Risk Engine ----------
+function computeRisk(b){
+  const onTimeScore = b.on_time_pct; // 0-100, higher = better
+  const dpd = b.dpd;
+  let dpdPenalty;
+  if(dpd <= 0) dpdPenalty = 0;
+  else if(dpd <= 5) dpdPenalty = 20;
+  else if(dpd <= 15) dpdPenalty = 45;
+  else if(dpd <= 30) dpdPenalty = 70;
+  else dpdPenalty = 95;
+
+  const nachPenalty = Math.min(b.nach_bounce_history * 18, 60);
+
+  const tenureProgress = b.tenure_done / b.tenure_total;
+  const tenurePenalty = tenureProgress < 0.15 ? 15 : 0; // new borrowers slightly riskier (less history)
+
+  // Composite risk 0-100 (higher = riskier)
+  const raw = (100-onTimeScore)*0.40 + dpdPenalty*0.30 + nachPenalty*0.20 + tenurePenalty*0.10;
+  const risk = Math.max(2, Math.min(98, Math.round(raw)));
+
+  let band;
+  if(risk >= 60) band='high';
+  else if(risk >= 30) band='med';
+  else band='low';
+
+  return {score:risk, band};
+}
+
+function dueDateOffsetLabel(dpd){
+  if(dpd < 0) return `Due in ${Math.abs(dpd)}d`;
+  if(dpd === 0) return `Due today`;
+  return `${dpd}d overdue`;
+}
+
+// Reminder cadence logic: T-7, T-2, T-1, T0(due), then escalation if overdue + eNACH retry logic
+function buildSchedule(b, risk){
+  const items = [];
+  const dpd = b.dpd;
+
+  const channelByBand = {low:'SMS', med:'WhatsApp', high:'WhatsApp + IVR Call'};
+  const chan = channelByBand[risk.band];
+
+  // T-7
+  items.push({
+    day:'T−7', title:`Reminder sent — ${chan.split(' + ')[0]}`,
+    detail:`"Your EMI of ₹${b.emi_amount.toLocaleString('en-IN')} is due in 7 days. Pay early to keep your repayment streak."`,
+    status: dpd <= -7 ? 'scheduled' : 'done'
+  });
+
+  // T-2
+  items.push({
+    day:'T−2', title:`Reminder sent — ${chan.split(' + ')[0]}`,
+    detail: b.has_nach ? `eNACH debit scheduled in 2 days. Ensure sufficient balance in linked account.` : `EMI due in 2 days. Tap to pay via UPI/link.`,
+    status: dpd <= -2 ? 'scheduled' : 'done'
+  });
+
+  // T-1
+  items.push({
+    day:'T−1', title: risk.band==='high' ? 'Reminder + balance check nudge' : 'Final reminder sent',
+    detail: risk.band==='high'
+      ? `High-risk profile: secondary nudge sent on ${chan.includes('IVR') ? 'WhatsApp and an automated IVR call' : 'WhatsApp'} 1 day before due date.`
+      : `"Tomorrow is your EMI due date — your account will be auto-debited." sent via ${chan.split(' + ')[0]}.`,
+    status: dpd <= -1 ? 'scheduled' : 'done'
+  });
+
+  // T0 - due date / NACH presentation
+  if(b.has_nach){
+    const bounced = b.nach_bounce_history > 0 && dpd >= 0;
+    items.push({
+      day:'T0', title: 'eNACH auto-debit presented',
+      detail: bounced
+        ? `Mandate presented to bank — returned (insufficient funds / mandate issue). Auto-retry queued for T+2.`
+        : `Mandate presented to linked bank account for ₹${b.emi_amount.toLocaleString('en-IN')}.`,
+      status: dpd < 0 ? 'scheduled' : (bounced ? 'escalated' : 'done')
+    });
+  } else {
+    items.push({
+      day:'T0', title:'Due-date reminder — payment link',
+      detail:`Manual payer — UPI/payment link sent via ${chan.split(' + ')[0]} on due date.`,
+      status: dpd < 0 ? 'scheduled' : 'done'
+    });
+  }
+
+  // Overdue escalation if applicable
+  if(dpd > 0){
+    if(b.has_nach && b.nach_bounce_history > 0){
+      items.push({
+        day:'T+2', title:'eNACH auto-retry triggered',
+        detail:`System re-presents the mandate automatically. If this fails again, case routes to a collections officer for manual outreach.`,
+        status: dpd >= 2 ? 'done' : 'scheduled'
+      });
+    }
+    if(dpd > 5){
+      items.push({
+        day:`T+${dpd}`, title: risk.band==='high' ? 'Escalated to collections officer' : 'Escalation reminder',
+        detail: risk.band==='high'
+          ? `Risk score crossed threshold — case auto-assigned to a human collections agent with full repayment history attached.`
+          : `Automated call placed; if unresolved in 3 days, case escalates to manual follow-up.`,
+        status:'escalated'
+      });
+    }
+  }
+
+  return items;
+}
+
+function strategyText(b, risk){
+  const bandLabel = {low:'Healthy', med:'Watch', high:'High risk'}[risk.band];
+  const cadence = {low:'standard 3-touch (T-7 / T-2 / T-1)', med:'reinforced 3-touch with WhatsApp escalation', high:'intensive cadence with IVR call + early officer handoff'}[risk.band];
+  let nachNote = '';
+  if(b.has_nach){
+    nachNote = b.nach_bounce_history > 0
+      ? ` This borrower is on eNACH but has ${b.nach_bounce_history} prior bounce${b.nach_bounce_history>1?'s':''}, so the engine adds a pre-debit balance-check nudge and queues an automatic retry on failure.`
+      : ` eNACH is active with a clean history — the engine keeps reminders light-touch since auto-debit is reliable.`;
+  } else {
+    nachNote = ` No eNACH on file — the engine relies on reminders driving a manual payment, so cadence is slightly more frequent to compensate.`;
+  }
+  return `<b>${bandLabel} (${risk.score}/100)</b> — based on a ${b.on_time_pct}% on-time rate over the last 6 EMIs and current DPD of ${b.dpd > 0 ? b.dpd : 0}, this borrower gets the <b>${cadence}</b>.${nachNote}`;
+}
+
+// ---------- DPD Timeline sparkline ----------
+function renderDpdTimeline(b){
+  // window: -10 to +max(dpd+5, 10)
+  const minD = -10;
+  const maxD = Math.max(b.dpd + 6, 12);
+  const range = maxD - minD;
+  const pct = (d) => ((d - minD) / range) * 100;
+
+  const duePct = pct(0);
+  const todayPct = pct(b.dpd);
+
+  const reminders = [-7,-2,-1].map(d => ({d, sent: b.dpd >= d}));
+
+  let ticks = reminders.map(r => `<div class="dpd-tick ${r.sent?'sent':'pending'}" style="left:${pct(r.d)}%"></div>`).join('');
+
+  return `
+    <div class="dpd-timeline">
+      <div class="dpd-track"></div>
+      ${ticks}
+      <div class="dpd-due-marker" style="left:${duePct}%"></div>
+      <div class="dpd-tick today" style="left:${todayPct}%"></div>
+      <div class="dpd-now-label" style="left:${todayPct}%">${b.dpd>0?'+'+b.dpd+'d':(b.dpd===0?'now':b.dpd+'d')}</div>
+    </div>
+  `;
+}
+
+// ---------- Rendering ----------
+let currentFilter = 'all';
+let currentSearch = '';
+let selectedId = null;
+
+function passesFilter(risk){
+  if(currentFilter==='all') return true;
+  return risk.band === currentFilter;
+}
+
+function renderHealthStrip(){
+  const scored = BORROWERS.map(b=>({b, risk:computeRisk(b)}));
+  const totalDue = BORROWERS.reduce((s,b)=>s+b.emi_amount,0);
+  const overdue = scored.filter(x=>x.b.dpd>0);
+  const overdueAmt = overdue.reduce((s,x)=>s+x.b.emi_amount,0);
+  const highRiskCount = scored.filter(x=>x.risk.band==='high').length;
+  const nachCoverage = Math.round(100*BORROWERS.filter(b=>b.has_nach).length/BORROWERS.length);
+  const avgRisk = Math.round(scored.reduce((s,x)=>s+x.risk.score,0)/scored.length);
+
+  const cells = [
+    {label:'Total EMI Book (this cycle)', value:`₹${(totalDue/100000).toFixed(2)}L`, delta:`${BORROWERS.length} active borrowers`, deltaClass:''},
+    {label:'Amount Currently Overdue', value:`₹${(overdueAmt/100000).toFixed(2)}L`, delta:`${overdue.length} accounts past due`, deltaClass:'delta-down'},
+    {label:'High-Risk Accounts', value:`${highRiskCount}`, delta:`${Math.round(100*highRiskCount/BORROWERS.length)}% of portfolio`, deltaClass:'delta-down'},
+    {label:'eNACH Coverage', value:`${nachCoverage}%`, delta:`auto-debit enabled`, deltaClass:'delta-up'},
+    {label:'Avg. Portfolio Risk Score', value:`${avgRisk}`, delta:`/ 100`, deltaClass:''},
+  ];
+
+  document.getElementById('healthStrip').innerHTML = cells.map(c=>`
+    <div class="health-cell">
+      <div class="health-label">${c.label}</div>
+      <div class="health-value">${c.value}</div>
+      <div class="health-delta ${c.deltaClass}">${c.delta}</div>
+    </div>
+  `).join('');
+}
+
+function renderTable(){
+  const rows = BORROWERS
+    .map(b=>({b, risk:computeRisk(b)}))
+    .filter(x=>passesFilter(x.risk))
+    .filter(x=>{
+      if(!currentSearch) return true;
+      const s = currentSearch.toLowerCase();
+      return x.b.name.toLowerCase().includes(s) || x.b.id.toLowerCase().includes(s);
+    })
+    .sort((a,c)=>c.risk.score - a.risk.score);
+
+  const bandLabel = {low:'Healthy', med:'Watch', high:'High risk'};
+
+  document.getElementById('tableBody').innerHTML = rows.map(({b,risk})=>{
+    const nextAction = risk.band==='high'
+      ? (b.dpd>5 ? 'Officer follow-up' : 'IVR call + WhatsApp')
+      : risk.band==='med' ? 'WhatsApp reminder' : 'SMS reminder';
+
+    return `
+    <tr data-id="${b.id}" class="${selectedId===b.id?'selected':''}">
+      <td>
+        <div class="b-name">${b.name}</div>
+        <div class="b-sub">${b.id} · ${b.loan_type} · ${b.city}</div>
+      </td>
+      <td><span class="risk-pill risk-${risk.band}"><span class="dot"></span>${risk.score} · ${bandLabel[risk.band]}</span></td>
+      <td class="num">${dueDateOffsetLabel(b.dpd)}</td>
+      <td class="num">₹${b.emi_amount.toLocaleString('en-IN')}</td>
+      <td><span class="nach-tag ${b.has_nach?'active':''}">${b.has_nach? (b.nach_bounce_history>0?`eNACH (${b.nach_bounce_history} bounced)`:'eNACH active') : 'Manual pay'}</span></td>
+      <td>${renderDpdTimeline(b)}</td>
+      <td style="font-size:12px;color:var(--text-dim);">${nextAction}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" style="text-align:center;color:var(--text-dimmer);padding:30px;">No borrowers match this view.</td></tr>`;
+
+  document.querySelectorAll('#tableBody tr[data-id]').forEach(tr=>{
+    tr.addEventListener('click', ()=>openDetail(tr.getAttribute('data-id')));
+  });
+}
+
+function openDetail(id){
+  selectedId = id;
+  const b = BORROWERS.find(x=>x.id===id);
+  const risk = computeRisk(b);
+  const schedule = buildSchedule(b, risk);
+  const bandLabel = {low:'Healthy', med:'Watch', high:'High risk'}[risk.band];
+
+  const histChips = b.history.map(h=>`<div class="hist-chip ${h}">${h}</div>`).join('');
+
+  document.getElementById('detailPanel').innerHTML = `
+    <div class="detail-head">
+      <button class="close-btn" id="closeDetail">✕</button>
+      <div class="detail-name">${b.name}</div>
+      <div class="detail-meta">${b.id} · ${b.loan_type} · ${b.city} · ${b.income_band}</div>
+    </div>
+    <div class="detail-body">
+
+      <div class="detail-block">
+        <h3>AI Risk Assessment</h3>
+        <div class="strategy-banner">${strategyText(b, risk)}</div>
+      </div>
+
+      <div class="detail-block">
+        <h3>Key Figures</h3>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="l">Risk score</div><div class="v">${risk.score}/100</div></div>
+          <div class="stat-box"><div class="l">Status</div><div class="v">${bandLabel}</div></div>
+          <div class="stat-box"><div class="l">EMI amount</div><div class="v">₹${b.emi_amount.toLocaleString('en-IN')}</div></div>
+          <div class="stat-box"><div class="l">Days past due</div><div class="v">${b.dpd>0?'+'+b.dpd:b.dpd}</div></div>
+          <div class="stat-box"><div class="l">Tenure</div><div class="v">${b.tenure_done}/${b.tenure_total} mo</div></div>
+          <div class="stat-box"><div class="l">Loan principal</div><div class="v">₹${(b.principal/1000).toFixed(0)}k</div></div>
+        </div>
+      </div>
+
+      <div class="detail-block">
+        <h3>Repayment History — Last 6 EMIs</h3>
+        <div class="hist-row">${histChips}</div>
+        <div class="hist-caption">P = paid on time · L = late (≤5 days) · D = defaulted/missed · oldest → newest</div>
+      </div>
+
+      <div class="detail-block">
+        <h3>Auto-Generated Reminder &amp; eNACH Schedule</h3>
+        ${schedule.map(s=>`
+          <div class="schedule-item">
+            <div class="sched-marker"><div class="sched-day">${s.day}</div></div>
+            <div class="sched-content">
+              <div class="sched-title">${s.title}</div>
+              <div class="sched-detail">${s.detail}</div>
+            </div>
+            <div class="sched-status ${s.status}">${s.status}</div>
+          </div>
+        `).join('')}
+      </div>
+
+    </div>
+  `;
+
+  document.getElementById('closeDetail').addEventListener('click', closeDetail);
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('detailPanel').classList.add('open');
+  renderTable();
+}
+
+function closeDetail(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('detailPanel').classList.remove('open');
+  selectedId = null;
+  renderTable();
+}
+
+document.getElementById('overlay').addEventListener('click', closeDetail);
+
+document.querySelectorAll('.seg-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.getAttribute('data-filter');
+    renderTable();
+  });
+});
+
+document.getElementById('searchBox').addEventListener('input', (e)=>{
+  currentSearch = e.target.value;
+  renderTable();
+});
+
+document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('en-IN', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+renderHealthStrip();
+renderTable();
+</script>
+</body>
+</html>
